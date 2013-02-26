@@ -62,16 +62,7 @@ function openInbox (next) {
       console.error('Error connecting', err);
       process.exit(1);
     }
-
-    imap.openBox('[Gmail]/All Mail', true, function (err, _box) {
-      if (err) {
-        console.error('Error connecting', err);
-        process.exit(1);
-      }
-
-      box = _box;
-      next();
-    });
+    next();
   });
 }
 
@@ -184,15 +175,21 @@ def searchMail(query):
     */
 
 function searchMail (list, keywords, next) {
-  imap.search([
-    ['TO', list + '@lists.olin.edu'],
-    ['TEXT', keywords.join(' ')]
-  ], function (err, results) {
+  imap.openBox(list, true, function (err) {
     if (err) {
-      next(null, []);
-    } else {
-      next(null, results);
+      console.error('Error connecting', err);
+      process.exit(1);
     }
+
+    imap.search([
+      ['TEXT', keywords.join(' ')]
+    ], function (err, results) {
+      if (err) {
+        next(null, []);
+      } else {
+        next(null, results);
+      }
+    });
   });
 }
 
@@ -223,7 +220,6 @@ function retrieveMail (results, next) {
               subject: obj.subject,
               from: obj.from,
               to: obj.to,
-              // z: obj,
               html: obj.html,
               text: text,
               date: new Date(obj.headers.date)
