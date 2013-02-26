@@ -21,19 +21,21 @@ block content
 
   ul
     li
-      a(href="/api/lists/helpme?text=helpyou&sessionid=" + sessionid)
+      a(href="/api/lists/helpme?sessionid=" + sessionid + "&text=helpyou")
         code
-          | http://lists.olinapps.com/api/lists/[list name]?text=[some text to search for]&sessionid=...
+          | http://lists.olinapps.com/api/lists/[list name]?sessionid=...&text=[some text to search for]
       br
       | This returns a JSON object with an "urls" property, each a link to a batched JSON list of messages (50 each). The IDs are definitely not in Date order, despite their appearance.
     li
-      a(href="/api/messages?ids=55927,74429,74531,74536,74537,74663,74743,74818,74834,75057,75182,75214,75252,75254,75292,75380,75476,75512,75746,75747&sessionid=" + sessionid)
+      a(href="/api/messages?sessionid=" + sessionid + "&ids=55927,74429,74531,74536,74537,74663,74743,74818,74834,75057,75182,75214,75252,75254,75292,75380,75476,75512,75746,75747")
         code
           | http://lists.olinapps.com/api/messages?ids=[comma separated list of mail ids]&sessionid=...
       br
       | Return the content for a set of messages.
     li
-      code http://lists.olinapps.com/api/lists/[list name]/archive
+      a(href="/api/lists/helpme/archive?sessionid=" + sessionid)
+        code
+          | http://lists.olinapps.com/api/lists/[list name]/archive?sessionid=...
       br
       | Download the entire archive for a mailing list. 
       b Don't use this endpoint too often.
