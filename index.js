@@ -7,13 +7,13 @@ var express = require('express')
   , http = require('http')
   , path = require('path')
   , olinapps = require('olinapps')
-  // , mongojs = require('mongojs')
-  // , MongoStore = require('connect-mongo')(express);
+  , mongojs = require('mongojs')
+  , MongoStore = require('connect-mongo')(express);
 
 var app = express(), db;
 
 app.configure(function () {
-  // db = mongojs(process.env.MONGOLAB_URI || 'olinapps-quotes', ['quotes']);
+  db = mongojs(process.env.MONGOLAB_URI || 'olinapps-quotes', ['quotes']);
   app.set('port', process.env.PORT || 3000);
   app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
@@ -23,12 +23,12 @@ app.configure(function () {
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.cookieParser(app.get('secret')));
-  // app.use(express.session({
-  //   secret: app.get('secret'),
-  //   store: new MongoStore({
-  //     url: process.env.MONGOLAB_URI || 'mongodb://localhost/olinapps-quotes'
-  //   })
-  // }));
+  app.use(express.session({
+    secret: app.get('secret'),
+    store: new MongoStore({
+      url: process.env.MONGOLAB_URI || 'mongodb://localhost/olinapps-quotes'
+    })
+  }));
   app.use(app.router);
   app.use(express.static(path.join(__dirname, 'public')));
 });
