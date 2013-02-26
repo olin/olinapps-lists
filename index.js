@@ -10,7 +10,8 @@ var express = require('express')
   , Imap = require('imap')
   , mailparser = require('mailparser')
   , mongojs = require('mongojs')
-  , MongoStore = require('connect-mongo')(express);
+  , MongoStore = require('connect-mongo')(express)
+  , async = require('async');
 
 var app = express(), db;
 
@@ -174,33 +175,40 @@ def searchMail(query):
         return searchMail(query)
     */
 
-function searchMail (list, keywords, next) {
-  imap.openBox(list, true, function (err) {
+function selectBox (box, next) {
+  imap.openBox(box, true, function (err) {
     if (err) {
       console.error('Error connecting', err);
-      process.exit(1);
     }
+    next();
+  })
+}
 
-    imap.search([
-      ['TEXT', keywords.join(' ')]
-    ], function (err, results) {
-      if (err) {
-        next(null, []);
-      } else {
-        next(null, results);
-      }
-    });
+function searchMail (list, keywords, next) {
+  imap.search([
+    //'ALL', ['SENTBEFORE', 'Dec 10, 2004'],
+    ['X-GM-LABELS', list],
+    ['TEXT', keywords.join(' ')]
+  ], function (err, results) {
+    if (err) {
+      next(null, []);
+    } else {
+      next(null, results);
+    }
   });
 }
 
-function retrieveMail (results, next) {
-  var messages = [], count = 0, done = false;
+function retrieveMail (results, each) {
+  var count = 0, done = false;
+  if (!results.length) {
+    return each(null, null);
+  }
   imap.fetch(results, { struct: false },
     { headers: { parse: false },
       body: true,
       cb: function (fetch) {
         fetch.on('message', function (msg) {
-          console.log('Checking message no. ' + msg.seqno);
+          //console.log('Checking message no. ' + msg.seqno);
           count++;
 
           var parser = new mailparser.MailParser();
@@ -214,24 +222,39 @@ function retrieveMail (results, next) {
               });
             }
 
-            messages.push({
+            var message = {
               seqno: msg.seqno,
               uid: msg.uid,
               subject: obj.subject,
               from: obj.from,
               to: obj.to,
               html: obj.html,
-              text: text,
+              text: text || (body && body.indexOf('_000_') > -1 ? '' : body),
               date: new Date(obj.headers.date)
-            });
+            };
+
+            each(null, message);
 
             count--;
             if (count <= 0 && done) {
               console.log('Done fetching all messages!');
-              next(null, messages);
+              each(null, null);
             }
           });
 
+          // Damn, old old messages have the wrong mime type entirely.
+          // We patch this in our implementation.
+          var body = null;
+          msg.on('data', function (data) {
+            if (body != null) {
+              body += String(data);
+            }
+            if (body == null && String(data).match(/\r\n\r\n/)) {
+              body = String(data).replace(/^[\s\S]*?\r\n\r\n/, '');
+            }
+          });
+
+          // Forward data to mailparser.
           msg.on('data', function (data) {
             parser.write(data.toString());
           })
@@ -247,14 +270,31 @@ function retrieveMail (results, next) {
     }, function (err) {
       done = true;
       if (err) {
-        next(err, []);
+        each(null, null);
       };
       if (count == 0) {
         console.log('Done fetching some messages...');
-        next(null, messages);
+        each(null, null);
       }
     }
   );
+}
+
+function mailStream (ids, stream) {
+  var first = true;
+  stream.write('{messages:[');
+  retrieveMail(ids, function (err, message) {
+    if (!message) {
+      stream.end(']}');
+      console.log('Done streaming mail.');
+      return;
+    }
+    if (!first) {
+      stream.write(',');
+    }
+    first = false;
+    stream.write(JSON.stringify(message));
+  });
 }
 
 /**
@@ -281,7 +321,7 @@ app.get('/', function (req, res) {
 
 app.get('/api/lists/:list', function (req, res) {
   searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
-    var chunkSize = 20;
+    var chunkSize = 50;
     var groups = [].concat.apply([],
       ids.map(function (elem, i) {
         return i % chunkSize ? [] : [ids.slice(i, i + chunkSize)];
@@ -289,18 +329,21 @@ app.get('/api/lists/:list', function (req, res) {
     ).map(function (arr) {
       return 'http://' + app.get('host') + '/api/messages?ids=' + arr.join(',') + '&sessionid=' + req.session.sessionid
     });
-    res.json({ids: groups});
+    res.json({ids: ids.map(Number), urls: groups});
   })
 })
 
 app.get('/api/messages', function (req, res) {
   var ids = req.query.ids ? req.query.ids.split(',') : [];
-  retrieveMail(ids, function (err, messages) {
-    if (err) {
-      messages = [];
-    }
-    res.json({messages: messages});
-  })
+  mailStream(ids, res);
+})
+
+app.get('/api/lists/:list/archive', function (req, res) {
+  searchMail(req.params.list, [], function (err, ids) {
+    console.log(ids.length);
+    res.setHeader('Content-Type', 'application/json');
+    mailStream(ids, res);
+  });
 })
 
 /**
@@ -308,7 +351,9 @@ app.get('/api/messages', function (req, res) {
  */
 
 openInbox(function () {
-  http.createServer(app).listen(app.get('port'), function(){
-    console.log("Express server listening on http://" + app.get('host'));
+  selectBox('[Gmail]/All Mail', function () {
+    http.createServer(app).listen(app.get('port'), function(){
+      console.log("Express server listening on http://" + app.get('host'));
+    });
   });
 });

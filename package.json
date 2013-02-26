@@ -17,6 +17,7 @@
     "olinapps": "~0.0.3",
     "connect-mongo": "~0.3.2",
     "imap": "~0.7.7",
-    "mailparser": "~0.2.33"
+    "mailparser": "~0.2.33",
+    "async": "~0.2.5"
   }
 }
