@@ -77,16 +77,18 @@ function selectBox (box, next) {
 }
 
 function searchMail (list, keywords, next) {
-  imap.search([
-    //'ALL', ['SENTBEFORE', 'Dec 10, 2004'],
-    ['X-GM-LABELS', list],
-    ['TEXT', keywords.join(' ')]
-  ], function (err, results) {
-    if (err) {
-      next(null, []);
-    } else {
-      next(null, results);
-    }
+  selectBox('[Gmail]/All Mail', function () {
+    imap.search([
+      //'ALL', ['SENTBEFORE', 'Dec 10, 2004'],
+      ['X-GM-LABELS', list],
+      ['TEXT', keywords.join(' ')]
+    ], function (err, results) {
+      if (err) {
+        next(null, []);
+      } else {
+        next(null, results);
+      }
+    });
   });
 }
 
@@ -95,81 +97,83 @@ function retrieveMail (results, each) {
   if (!results.length) {
     return each(null, null);
   }
-  imap.fetch(results, { struct: false },
-    { headers: { parse: false },
-      body: true,
-      cb: function (fetch) {
-        fetch.on('message', function (msg) {
-          //console.log('Checking message no. ' + msg.seqno);
-          count++;
+  selectBox('[Gmail]/All Mail', function () {
+    imap.fetch(results, { struct: false },
+      { headers: { parse: false },
+        body: true,
+        cb: function (fetch) {
+          fetch.on('message', function (msg) {
+            //console.log('Checking message no. ' + msg.seqno);
+            count++;
 
-          var parser = new mailparser.MailParser();
-          parser.on("end", function (obj) {
-            text = obj.text;
-            if (obj.alternatives && obj.alternatives.length) {
-              obj.alternatives.forEach(function (alt) {
-                if (alt.contentType == 'text/plain') {
-                  text = alt.content + text;
-                }
-              });
-            }
+            var parser = new mailparser.MailParser();
+            parser.on("end", function (obj) {
+              text = obj.text;
+              if (obj.alternatives && obj.alternatives.length) {
+                obj.alternatives.forEach(function (alt) {
+                  if (alt.contentType == 'text/plain') {
+                    text = alt.content + text;
+                  }
+                });
+              }
 
-            var message = {
-              seqno: msg.seqno,
-              uid: msg.uid,
-              subject: obj.subject,
-              from: obj.from,
-              to: obj.to,
-              html: obj.html,
-              text: text || (body && body.indexOf('_000_') > -1 ? '' : body),
-              date: new Date(obj.headers.date)
-            };
+              var message = {
+                seqno: msg.seqno,
+                uid: msg.uid,
+                subject: obj.subject,
+                from: obj.from,
+                to: obj.to,
+                html: obj.html,
+                text: text || (body && body.indexOf('_000_') > -1 ? '' : body),
+                date: new Date(obj.headers.date)
+              };
 
-            each(null, message);
+              each(null, message);
 
-            count--;
-            if (count <= 0 && done) {
-              console.log('Done fetching all messages!');
-              each(null, null);
-            }
+              count--;
+              if (count <= 0 && done) {
+                console.log('Done fetching all messages!');
+                each(null, null);
+              }
+            });
+
+            // Damn, old old messages have the wrong mime type entirely.
+            // We patch this in our implementation.
+            var body = null;
+            msg.on('data', function (data) {
+              if (body != null) {
+                body += String(data);
+              }
+              if (body == null && String(data).match(/\r\n\r\n/)) {
+                body = String(data).replace(/^[\s\S]*?\r\n\r\n/, '');
+              }
+            });
+
+            // Forward data to mailparser.
+            msg.on('data', function (data) {
+              parser.write(data.toString());
+            })
+            msg.on('end', function (data) {
+              parser.end();
+            })
           });
 
-          // Damn, old old messages have the wrong mime type entirely.
-          // We patch this in our implementation.
-          var body = null;
-          msg.on('data', function (data) {
-            if (body != null) {
-              body += String(data);
-            }
-            if (body == null && String(data).match(/\r\n\r\n/)) {
-              body = String(data).replace(/^[\s\S]*?\r\n\r\n/, '');
-            }
-          });
-
-          // Forward data to mailparser.
-          msg.on('data', function (data) {
-            parser.write(data.toString());
+          fetch.on('error', function (msg) {
+            console.log(msg);
           })
-          msg.on('end', function (data) {
-            parser.end();
-          })
-        });
-
-        fetch.on('error', function (msg) {
-          console.log(msg);
-        })
+        }
+      }, function (err) {
+        done = true;
+        if (err) {
+          each(null, null);
+        };
+        if (count == 0) {
+          console.log('Done fetching some messages...');
+          each(null, null);
+        }
       }
-    }, function (err) {
-      done = true;
-      if (err) {
-        each(null, null);
-      };
-      if (count == 0) {
-        console.log('Done fetching some messages...');
-        each(null, null);
-      }
-    }
-  );
+    );
+  });
 }
 
 function mailStream (ids, stream) {
@@ -243,9 +247,7 @@ app.get('/api/lists/:list/archive', function (req, res) {
  */
 
 openInbox(function () {
-  selectBox('[Gmail]/All Mail', function () {
-    http.createServer(app).listen(app.get('port'), function(){
-      console.log("Express server listening on http://" + app.get('host'));
-    });
+  http.createServer(app).listen(app.get('port'), function(){
+    console.log("Express server listening on http://" + app.get('host'));
   });
 });
