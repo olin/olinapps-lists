@@ -223,9 +223,12 @@ app.get('/api/lists/:list', function (req, res) {
         return i % chunkSize ? [] : [ids.slice(i, i + chunkSize)];
       })
     ).map(function (arr) {
-      return 'http://' + app.get('host') + '/api/messages?ids=' + arr.join(',') + '&sessionid=' + req.session.sessionid
+      return {
+        ids: arr,
+        urls: 'http://' + app.get('host') + '/api/messages?ids=' + arr.join(',') + '&sessionid=' + req.session.sessionid
+      };
     });
-    res.json({ids: ids.map(Number), urls: groups});
+    res.json({groups: groups});
   })
 })
 
