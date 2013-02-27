@@ -178,7 +178,7 @@ function retrieveMail (results, each) {
 
 function mailStream (ids, stream) {
   var first = true;
-  stream.write('{messages:[');
+  stream.write('{"messages":[');
   retrieveMail(ids, function (err, message) {
     if (!message) {
       stream.end(']}');
