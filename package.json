@@ -18,6 +18,6 @@
     "imap": "~0.7.7",
     "mailparser": "~0.2.33",
     "async": "~0.2.5",
-    "olinapps": "~0.1.0"
+    "olinapps": "~0.1.1"
   }
 }
