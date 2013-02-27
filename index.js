@@ -224,7 +224,7 @@ app.get('/api/lists/:list', function (req, res) {
       })
     ).map(function (arr) {
       return {
-        ids: arr,
+        ids: arr.map(Number),
         urls: 'http://' + app.get('host') + '/api/messages?ids=' + arr.join(',') + '&sessionid=' + req.session.sessionid
       };
     });
