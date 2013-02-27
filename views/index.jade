@@ -25,7 +25,7 @@ block content
         code
           | http://lists.olinapps.com/api/lists/[list name]?sessionid=...&text=[some text to search for]
       br
-      | This returns a JSON object with an "urls" property, each a link to a batched JSON list of messages (50 each). The IDs are definitely not in Date order, despite their appearance.
+      | This returns a JSON object with a "groups" property, each with a "url" to a batched JSON list of messages (50 each). The IDs are definitely not in Date order, despite their appearance.
     li
       a(href="/api/messages?sessionid=" + sessionid + "&ids=55927,74429,74531,74536,74537,74663,74743,74818,74834,75057,75182,75214,75252,75254,75292,75380,75476,75512,75746,75747")
         code
