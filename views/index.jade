@@ -32,11 +32,3 @@ block content
           | http://lists.olinapps.com/api/messages?ids=[comma separated list of mail ids]&sessionid=...
       br
       | Return the content for a set of messages.
-    li
-      a(href="/api/lists/helpme/archive?sessionid=" + sessionid)
-        code
-          | http://lists.olinapps.com/api/lists/[list name]/archive?sessionid=...
-      br
-      | Download the entire archive for a mailing list. 
-      b Don't use this endpoint too often.
-      |  Please download and cache the contents if you want to analyze an entire mailing list.

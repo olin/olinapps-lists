@@ -232,15 +232,7 @@ app.get('/api/lists/:list', function (req, res) {
 app.get('/api/messages', function (req, res) {
   var ids = req.query.ids ? req.query.ids.split(',') : [];
   mailStream(ids, res);
-})
-
-app.get('/api/lists/:list/archive', function (req, res) {
-  searchMail(req.params.list, [], function (err, ids) {
-    console.log(ids.length);
-    res.setHeader('Content-Type', 'application/json');
-    mailStream(ids, res);
-  });
-})
+});
 
 /**
  * Launch
