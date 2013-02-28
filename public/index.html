@@ -58,15 +58,16 @@ iframe { width: 100%; box-sizing: border-box; }
 
 #header .header-search { padding: 5px 0 0 5px; vertical-align: baseline; }
 
-#header { margin-bottom: 0 !important;}
-#tiny-list { border-right: 4px solid black;}
+html, body, #panel-container { margin: 0; padding: 0; }
 
 @media all and (max-width: 767px) {
   #tiny-list { display: none; }
 }
 
 @media all and (min-width: 768px) {
-  html, body, #panel-container { height: 100%; overflow: hidden; margin: 0; padding: 0; }
+  #header { margin-bottom: 0 !important;}
+  #tiny-list { border-right: 4px solid black;}
+  html, body, #panel-container { height: 100%; overflow: hidden; }
   #panel-container { margin-top: -104px; padding-top: 104px; box-sizing: border-box; }
   #tiny-list { width: 25%; float: left; height: 100%; overflow: auto; box-sizing: border-box }
   #message-list { width: 75%; float: left; height: 100%; overflow: auto; padding: 10px; box-sizing: border-box }
