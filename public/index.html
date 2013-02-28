@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<script src="http://code.jquery.com/jquery.min.js"></script>
+<style>
+body { font-family: Helvetica, sans-serif; }
+iframe { width: 100%; box-sizing: border-box; }
+.message-list, .message-list li { display: block; padding: 0; margin: 0; }
+
+.message-list li { margin: 10px 0; background: #eee; border: 1px solid #aaa; }
+.message-list iframe { border: none; display: block; height: 300px; }
+
+</style>
+<body>
+  <h1>Olin Mailing Lists</h1>
+  <form>
+    Search: <select id="list">
+    <option value="helpme">Helpme</option>
+    <option value="carpediem">Carpediem</option>
+  </select><br>
+    Keywords: <input type="text" id="keywords" value="northface"><br><button>Search</button></form>
+  <p id="searching"><em>Searching...</em></p>
+    <hr>
+  <ul class="message-list">
+  </ul>
+
+<script>
+$('#searching').hide();
+$('form').on('submit', function (e) {
+  $('#searching').show();
+  $('.message-list').html('');
+  $.ajax({
+    url: '/api/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
+    data: 'json',
+    success: function (json) {
+      function next () {
+        if (!json.groups.length) {
+          $('#searching').hide();
+        } else {
+          console.log('fetching a group...', json.groups.length);
+          var group = json.groups.shift();
+          $.ajax({
+            url: group.url,
+            data: "json",
+            success: function (json) {
+              json = JSON.parse(json);
+              json.messages.forEach(function (m) {
+                var $iframe = $('<iframe>').prop('src', 'about:blank');
+                $('.message-list').append($('<li>').append($iframe));
+                var doc = $iframe[0].contentDocument;
+                doc.open('text/html');
+                console.log(m);
+                doc.write($('<style>').text('body { padding: 10px 15px; } header h4 { margin: 0; }')[0].outerHTML);
+                doc.write('<header>');
+                doc.write($('<div>').text('From: ' + m.from[0].address)[0].outerHTML);
+                doc.write($('<h4>').text(m.subject)[0].outerHTML);
+                doc.write($('<em>').text(m.date)[0].outerHTML);
+                doc.write('</header>');
+                doc.write('<hr>');
+                doc.write(m.html || ('<pre>' + m.text + '</pre>'));
+                doc.close();
+              })
+              next();
+            }
+          })
+        }
+      }
+      next();
+    },
+    error: function () {
+      console.error('Couldn\'t download');
+    }
+  })
+  return false;
+});
+</script>
+</body>

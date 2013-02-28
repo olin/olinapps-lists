@@ -83,6 +83,7 @@ function searchMail (list, keywords, next) {
       ['X-GM-LABELS', list],
       ['TEXT', keywords.join(' ')]
     ], function (err, results) {
+      console.log(results.length);
       if (err) {
         next(null, []);
       } else {
@@ -206,14 +207,6 @@ app.all('/*', olinapps.loginRequired);
 /**
  * Routes
  */
-
-app.get('/', function (req, res) {
-  res.render('index', {
-    title: 'Olin Lists',
-    user: olinapps.user(req),
-    sessionid: req.session.sessionid
-  });
-});
 
 app.get('/api/lists/:list', function (req, res) {
   searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
