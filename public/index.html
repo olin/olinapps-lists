@@ -18,10 +18,10 @@ iframe { width: 100%; box-sizing: border-box; }
     <option value="carpediem">Carpediem</option>
   </select><br>
     Keywords: <input type="text" id="keywords" value="northface"><br><button>Search</button></form>
-  <p id="searching"><em>Searching...</em></p>
     <hr>
   <ul class="message-list">
   </ul>
+  <p id="searching"><em>Searching...</em></p>
 
 <script>
 $('#searching').hide();
@@ -32,6 +32,8 @@ $('form').on('submit', function (e) {
     url: '/api/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
     data: 'json',
     success: function (json) {
+      var backoff = 100;
+
       function next () {
         if (!json.groups.length) {
           $('#searching').hide();
@@ -59,7 +61,10 @@ $('form').on('submit', function (e) {
                 doc.write(m.html || ('<pre>' + m.text + '</pre>'));
                 doc.close();
               })
-              next();
+
+              // Exponentially delay when loading new pages. It's like infinite scrolling kinda
+              backoff *= 2;
+              setTimeout(next, json.groups.length ? backoff : 0);
             }
           })
         }
