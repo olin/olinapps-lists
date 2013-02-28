@@ -223,7 +223,7 @@ app.get('/api/lists/:list', function (req, res) {
     });
     res.json({groups: groups});
   })
-})
+});
 
 app.get('/api/messages', function (req, res) {
   var ids = req.query.ids ? req.query.ids.split(',') : [];

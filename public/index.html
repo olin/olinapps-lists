@@ -1,31 +1,94 @@
 <!DOCTYPE html>
 
-<script src="http://code.jquery.com/jquery.min.js"></script>
-<style>
+<html>
+  <head>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+    <link href="http://olinapps.com/static/style.css" rel="stylesheet">
+    <style>
+
 body { font-family: Helvetica, sans-serif; }
 iframe { width: 100%; box-sizing: border-box; }
+
 .message-list, .message-list li { display: block; padding: 0; margin: 0; }
+.message-list li { margin: 0 0 10px; background: #eee; border: 1px solid #aaa; }
+.message-list iframe { border: none; display: block; height: 300px; overflow: hidden; }
 
-.message-list li { margin: 10px 0; background: #eee; border: 1px solid #aaa; }
-.message-list iframe { border: none; display: block; height: 300px; }
+#tiny-list, #tiny-list li { display: block; margin: 0; padding: 0; }
+#tiny-list li { border: 1px solid #aaa; margin-bottom: -1px; background: #eee; padding: 5px 10px; font-size: 10px; cursor: pointer; }
+#tiny-list li:hover { background: #fea; }
 
+    </style>
+  </head>
+  <body>
+    <header class="olinstar">
+      <ul>
+        <li class="projects"><a href="//olinprojects.com/">olin<b>projects</b>.com</a></li>
+        <li class="students"><a href="//olinstudents.com/">olin<b>students</b>.com</a></li>
+        <li class="clubs"><a href="//olinclubs.com/">olin<b>clubs</b>.com</a></li>
+        <li class="apps"><a href="//olinapps.com/">olin<b>apps</b>.com</a></li>
+      </ul>
+    </header>
+
+    <style>
+.container-fluid h2 { clear: both; margin: 0; padding: 15px 0 15px; font-size: 1.5em; line-height: inherit; }
+
+/*
+ * page
+ */
+
+#header { border-bottom: 1px solid #999; margin: 0 0 0; padding: 15px 0 0 20px; background: #eee; overflow: auto; height: 55px; }
+#header h1 { font-size: 30px; float: left; margin: 0 20px 0 0; padding: 0; text-shadow: #fff 1px 1px 0; }
+#header-controls { float: right; margin: 5px 20px 0 0; }
+
+#header.affix { width: 100%; margin: 0; top: 0; }
+#header.affix #header-inner { margin-right: 20px; }
+
+@media all and (min-width: 768px) {
+  header { margin-bottom: 90px;}
+  #header { margin-top: -18px; margin-bottom: 20px; }
+}
+@media all and (max-width: 767px) { 
+  #header { height: auto; min-height: 55px; margin-bottom: 20px; }
+  #header h1 { font-size: 24px; }
+  #header-controls { display: none; }
+}
+
+#header .header-search { padding: 5px 0 0 5px; vertical-align: baseline; }
+
+#header { margin-bottom: 0 !important;}
+#tiny-list { border-right: 4px solid black;}
+html, body, #panel-container { height: 100%; overflow: hidden; }
 </style>
-<body>
-  <h1>Olin Mailing Lists</h1>
-  <form>
-    Search: <select id="list">
-    <option value="helpme">Helpme</option>
-    <option value="carpediem">Carpediem</option>
-  </select><br>
-    Keywords: <input type="text" id="keywords" value="northface"><br><button>Search</button></form>
-    <hr>
-  <ul class="message-list">
-  </ul>
-  <p id="searching"><em>Searching...</em></p>
 
-<script>
+    <div id="header" class="form-search row">
+      <form id="header-inner">
+        <h1>Mailing Lists</h1>
+        <div class="input-prepend header-search">
+          <span class="add-on">
+            <i class="icon-search"></i>
+          </span>
+          <input type="search" class="span3" placeholder="Filter by keywords, hit enter..." name="search" id="keywords">
+          <select id="list" style="margin-left: 15px">
+            <option value="helpme">Helpme</option>
+            <option value="carpediem">Carpediem</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-container">
+      <ul id="tiny-list" style="width: 25%; float: left; height: 100%; overflow: auto; box-sizing: border-box; padding-top: 104px; margin-top: -104px;"></ul>
+      <div id="message-list" style="width: 75%; float: left; height: 100%; overflow: auto; box-sizing: border-box; padding-top: 104px; margin-top: -104px; padding: 10px;">
+      <ul class="message-list"></ul>
+      <p id="searching"><em>Searching...</em></p>
+    </div>
+  </body>
+
+  <script>
 $('#searching').hide();
-$('form').on('submit', function (e) {
+$('#header-inner').on('submit', function (e) {
   $('#searching').show();
   $('.message-list').html('');
   $.ajax({
@@ -37,9 +100,11 @@ $('form').on('submit', function (e) {
       function next () {
         if (!json.groups.length) {
           $('#searching').hide();
+          $(window).trigger('resize');
         } else {
           console.log('fetching a group...', json.groups.length);
           var group = json.groups.shift();
+          var glength = json.groups.length;
           $.ajax({
             url: group.url,
             data: "json",
@@ -49,22 +114,35 @@ $('form').on('submit', function (e) {
                 var $iframe = $('<iframe>').prop('src', 'about:blank');
                 $('.message-list').append($('<li>').append($iframe));
                 var doc = $iframe[0].contentDocument;
+
+                var header = $('<div>')
+                  .append($('<b>').text(m.subject))
+                  .append($('<div>').text('From: ' + m.from[0].address))
+                  .append($('<em>').text(new Date(m.date)))
+                  .html();
+
                 doc.open('text/html');
-                console.log(m);
-                doc.write($('<style>').text('body { padding: 10px 15px; } header h4 { margin: 0; }')[0].outerHTML);
-                doc.write('<header>');
-                doc.write($('<div>').text('From: ' + m.from[0].address)[0].outerHTML);
-                doc.write($('<h4>').text(m.subject)[0].outerHTML);
-                doc.write($('<em>').text(m.date)[0].outerHTML);
-                doc.write('</header>');
+                doc.write($('<style>').text('body { padding: 10px 15px; } header b { margin: 0; }')[0].outerHTML);
+                doc.write('<header>' + header + '</header>');
                 doc.write('<hr>');
-                doc.write(m.html || ('<pre>' + m.text + '</pre>'));
+                doc.write(m.html || $('<pre>').css('white-space', 'pre-wrap').text(m.text)[0].outerHTML);
                 doc.close();
+
+                $('#tiny-list').append($('<li>').append(header).on('click', function () {
+                  $iframe[0].scrollIntoView();
+                }));
+
+
+                function onresize () {
+                  $iframe.height($iframe[0].contentDocument.documentElement.offsetHeight);
+                }
+                $(window).on('resize', onresize);
+                onresize();
               })
 
               // Exponentially delay when loading new pages. It's like infinite scrolling kinda
               backoff *= 2;
-              setTimeout(next, json.groups.length ? backoff : 0);
+              setTimeout(next, glength ? backoff : 0);
             }
           })
         }
@@ -77,5 +155,6 @@ $('form').on('submit', function (e) {
   })
   return false;
 });
-</script>
-</body>
+
+  </script>
+</html>
