@@ -105,7 +105,7 @@ html, body, #panel-container { margin: 0; padding: 0; }
 $('#searching').hide();
 $('#header-inner').on('submit', function (e) {
   $('#searching').show();
-  $('.message-list').html('');
+  $('.message-list, #tiny-list').html('');
   $.ajax({
     url: '/api/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
     data: 'json',
