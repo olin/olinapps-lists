@@ -81,13 +81,13 @@ function searchMail (list, keywords, next) {
     imap.search([
       //'ALL', ['SENTBEFORE', 'Dec 10, 2004'],
       ['X-GM-LABELS', list],
-      ['TEXT', keywords.join(' ')]
+      ['X-GM-RAW', keywords.join(' ')]
     ], function (err, results) {
       console.log(results.length);
       if (err) {
         next(null, []);
       } else {
-        next(null, results);
+        next(null, results.reverse()); //originally sorted incorrectly by gmail
       }
     });
   });
