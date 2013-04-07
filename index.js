@@ -87,7 +87,10 @@ function searchMail (list, keywords, next) {
       if (err) {
         next(null, []);
       } else {
-        next(null, results.reverse()); //originally sorted incorrectly by gmail
+        console.log(results);
+        results = results.reverse();
+        console.log(results); 
+        next(null, results); //originally sorted incorrectly by gmail
       }
     });
   });
