@@ -107,23 +107,9 @@ $('#header-inner').on('submit', function (e) {
   $('#searching').show();
   $('.message-list, #tiny-list').html('');
   $.ajax({
-    url: '/api/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
+    url: '/api/messages/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
     data: 'json',
     success: function (json) {
-      var backoff = 100;
-
-      function next () {
-        if (!json.groups.length) {
-          $('#searching').hide();
-          $(window).trigger('resize');
-        } else {
-          console.log('fetching a group...', json.groups.length);
-          var group = json.groups.shift();
-          var glength = json.groups.length;
-          $.ajax({
-            url: group.url,
-            data: "json",
-            success: function (json) {
               json = JSON.parse(json);
               json.messages.forEach(function (m) {
                 var $iframe = $('<iframe>').prop('src', 'about:blank');
@@ -155,16 +141,8 @@ $('#header-inner').on('submit', function (e) {
                 onresize();
               })
 
-              // Exponentially delay when loading new pages. It's like infinite scrolling kinda
-              backoff *= 2;
-              setTimeout(next, glength ? backoff : 0);
             }
-          })
-        }
-      }
-      next();
-    },
-    error: function () {
+    ,error: function () {
       console.error('Couldn\'t download');
     }
   })

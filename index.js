@@ -87,9 +87,7 @@ function searchMail (list, keywords, next) {
       if (err) {
         next(null, []);
       } else {
-        console.log(results);
         results = results.reverse();
-        console.log(results); 
         next(null, results); //originally sorted incorrectly by gmail
       }
     });
@@ -228,15 +226,29 @@ app.get('/api/lists/:list', function (req, res) {
   })
 });
 
+
+app.get('/api/messages/lists/:list', function (req, res) {
+  searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
+    var chunkSize = 50;
+    var groups = [].concat.apply([],
+      ids.map(function (elem, i) {
+        return i % chunkSize ? [] : [ids.slice(i, i + chunkSize)];
+      })
+    );
+    mailStream(groups[0].map(Number), res);
+  })
+});
+
+
 app.get('/api/messages', function (req, res) {
   var ids = req.query.ids ? req.query.ids.split(',') : [];
   mailStream(ids, res);
 });
 
+
 /**
  * Launch
  */
-
 openInbox(function () {
   http.createServer(app).listen(app.get('port'), function(){
     console.log("Express server listening on http://" + app.get('host'));
