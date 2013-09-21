@@ -111,7 +111,18 @@ $('#header-inner').on('submit', function (e) {
     data: 'json',
     success: function (json) {
               json = JSON.parse(json);
-              json.messages.forEach(function (m) {
+
+              if(!json.messages.length){
+                json.messages.push({
+                  subject: "No messages found. Perhaps you meant to search another list?",
+                  from: [{address:"❤"}],
+                  date:0,
+                  text:"Someone needs to make a proper empty view, this is shit.",
+
+
+                })
+              }
+              json.messages.reverse().forEach(function (m) {
                 var $iframe = $('<iframe>').prop('src', 'about:blank');
                 $('.message-list').append($('<li>').append($iframe));
                 var doc = $iframe[0].contentDocument;
@@ -133,14 +144,12 @@ $('#header-inner').on('submit', function (e) {
                   $iframe[0].scrollIntoView();
                 }));
 
-
                 function onresize () {
                   $iframe.height($iframe[0].contentDocument.documentElement.offsetHeight);
                 }
                 $(window).on('resize', onresize);
                 onresize();
               })
-
             }
     ,error: function () {
       console.error('Couldn\'t download');

@@ -10,14 +10,14 @@
     "npm": "1.1.x"
   },
   "dependencies": {
-    "express": "~3.0.0rc4",
-    "jade": "*",
+    "express": "~3.0.6",
+    "jade": "~0.35.0",
     "request": "~2.12.0",
     "mongojs": "~0.6.2",
-    "connect-mongo": "~0.3.2",
-    "imap": "~0.7.7",
+    "connect-mongo": "~0.3.3",
+    "imap": "~0.7.12",
     "mailparser": "~0.2.33",
-    "async": "~0.2.5",
-    "olinapps": "~0.1.1"
+    "async": "~0.2.9",
+    "olinapps": "~0.1.2"
   }
 }

@@ -29,7 +29,7 @@ app.configure(function () {
   app.use(express.session({
     secret: app.get('secret'),
     store: new MongoStore({
-      url: process.env.MONGOLAB_URI || 'mongodb://localhost/olinapps-lists'
+      url: process.env.MONGOLAB_URI || 'mongodb://heroku_app12469168:pc9ga3k3n79fn1fjq92pfo8mp6@ds053937.mongolab.com:53937/heroku_app12469168'
     })
   }));
   app.use(app.router);
@@ -181,7 +181,7 @@ function retrieveMail (results, each) {
 function mailStream (ids, stream) {
   var first = true;
   stream.write('{"messages":[');
-  retrieveMail(ids, function (err, message) {
+  retrieveMail(ids.reverse(), function (err, message) {
     if (!message) {
       stream.end(']}');
       console.log('Done streaming mail.');
@@ -230,12 +230,8 @@ app.get('/api/lists/:list', function (req, res) {
 app.get('/api/messages/lists/:list', function (req, res) {
   searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
     var chunkSize = 50;
-    var groups = [].concat.apply([],
-      ids.map(function (elem, i) {
-        return i % chunkSize ? [] : [ids.slice(i, i + chunkSize)];
-      })
-    );
-    mailStream(groups[0].map(Number), res);
+    var groups = chunk(ids, chunkSize);
+    mailStream((groups[0] || []).map(Number), res);
   })
 });
 
@@ -245,7 +241,18 @@ app.get('/api/messages', function (req, res) {
   mailStream(ids, res);
 });
 
+function chunk (arr, chunkLength) {
+  var chunks = [],
+      i = 0,
+      n = arr.length;
 
+  do
+  {
+    chunks.push(arr.slice(i, i += chunkLength));
+  } while (i < n) 
+  
+  return chunks;
+}
 /**
  * Launch
  */
