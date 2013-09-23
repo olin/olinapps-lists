@@ -3,6 +3,8 @@
 <html>
   <head>
     <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="/javascripts/history.js"></script>
+
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
     <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
     <link href="http://olinapps.com/static/style.css" rel="stylesheet">
@@ -102,10 +104,29 @@ html, body, #panel-container { margin: 0; padding: 0; }
   </body>
 
   <script>
+  $(function(){
+    function getParameterByName(name) {
+      name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+      var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+          results = regex.exec(location.search);
+      return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    };
+
+    var currentquery = getParameterByName('query');
+    var currentList = getParameterByName('list');
+    if(currentquery !== '')
+    {
+      $('#keywords').val(currentquery);
+      $('#list').prop('selectedIndex', currentList);
+      $('#header-inner').submit();
+    }
+  })
 $('#searching').hide();
 $('#header-inner').on('submit', function (e) {
   $('#searching').show();
   $('.message-list, #tiny-list').html('');
+  History.replaceState({}, "Searching for " +$('#keywords').val(), "?list=" + $('#list').prop('selectedIndex') + "&query=" + encodeURIComponent($('#keywords').val())); //
+
   $.ajax({
     url: '/api/messages/lists/' + $('#list').val() + '?text=' + encodeURIComponent($('#keywords').val()),
     data: 'json',

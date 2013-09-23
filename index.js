@@ -79,7 +79,6 @@ function selectBox (box, next) {
 function searchMail (list, keywords, next) {
   selectBox('[Gmail]/All Mail', function () {
     imap.search([
-      //'ALL', ['SENTBEFORE', 'Dec 10, 2004'],
       ['X-GM-LABELS', list],
       ['X-GM-RAW', keywords.join(' ')]
     ], function (err, results) {
@@ -211,7 +210,7 @@ app.all('/*', olinapps.loginRequired);
 
 app.get('/api/lists/:list', function (req, res) {
   searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
-    var chunkSize = 50;
+    var chunkSize = 100;
     var groups = [].concat.apply([],
       ids.map(function (elem, i) {
         return i % chunkSize ? [] : [ids.slice(i, i + chunkSize)];
@@ -229,7 +228,7 @@ app.get('/api/lists/:list', function (req, res) {
 
 app.get('/api/messages/lists/:list', function (req, res) {
   searchMail(req.params.list, (req.query.text || '').split(/\s+/), function (err, ids) {
-    var chunkSize = 50;
+    var chunkSize = 100;
     var groups = chunk(ids, chunkSize);
     mailStream((groups[0] || []).map(Number), res);
   })
